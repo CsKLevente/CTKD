@@ -33,6 +33,7 @@ def parse_option():
     
     parser.add_argument('--experiments_dir', type=str, default='models',help='Directory name to save the model, log, config')
     parser.add_argument('--experiments_name', type=str, default='baseline')
+    parser.add_argument('--save_model', action='store_true')
 
     # optimization
     parser.add_argument('--learning_rate', type=float, default=0.05, help='learning rate')
@@ -172,6 +173,7 @@ def main_worker(gpu, ngpus_per_node, opt):
     else:
         raise NotImplementedError(opt.dataset)
 
+    best_acc = 0
     # routine
     for epoch in range(1, opt.epochs + 1):
         if opt.multiprocessing_distributed:
@@ -192,15 +194,40 @@ def main_worker(gpu, ngpus_per_node, opt):
 
         test_acc, test_acc_top5, test_loss = validate(val_loader, model, criterion, opt)
 
+        best_model = False
         if not opt.multiprocessing_distributed or opt.rank % ngpus_per_node == 0:
             print(' ** Acc@1 {:.3f}, Acc@5 {:.3f}'.format(test_acc, test_acc_top5))
-            
+
+            if test_acc > best_acc:
+                best_acc = test_acc
+                best_model = True
+
+            state = {
+                'epoch': epoch,
+                'model': model.state_dict(),
+                'best_acc': best_acc,
+                'test_acc': test_acc,
+            }
+            save_file = os.path.join(opt.save_folder, '{}_best.pth'.format(opt.model))
+
             test_merics = { 
                     'test_loss': test_loss,
                     'test_acc': test_acc,
                     'test_acc_top5': test_acc_top5,
                     'epoch': epoch}    
             save_dict_to_json(test_merics, os.path.join(opt.save_folder, "test_best_metrics.json"))
+
+            if epoch > opt.epochs/2:
+                if best_model:
+                    best_model=False
+                    if opt.save_model:
+                        torch.save(state, save_file)
+
+            if epoch % opt.save_freq == 0:
+                save_ckpt = os.path.join(opt.save_folder, '{}_ckpt_epoch_{}.pth'.format(opt.model, epoch))
+                if opt.save_model:
+                    torch.save(state, save_ckpt)
+
             
 if __name__ == '__main__':
     main()

@@ -1,0 +1,2 @@
+
+python train_student.py --state_dict_save_transform --path_orig './save/student_model/tea-res56-stu-res20/KD/CTKD/fold-1/resnet20_best.pth' --state_dict_path './save/state_dicts/tea-res56-stu-res20/KD/CTKD/fold-1/resnet20_best.pth'

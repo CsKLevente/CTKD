@@ -70,18 +70,19 @@ def parse_option():
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2', 'ShuffleV2_Imagenet', 'MobileNetV2_Imagenet',
                                  'shufflenet_v2_x0_5', 'shufflenet_v2_x2_0', 'ResNet18Double'])
     parser.add_argument('--path-t', type=str, default=None, help='teacher model snapshot')
+    parser.add_argument('--path-s', type=str, default=None, help='student model snapshot')
 
     # distillation
     parser.add_argument('--distill', type=str, default='kd', choices=['kd', 'similarity', 'vid',
                                                                        'pkt', 'crd', 'dkd', 'srrl'])
     parser.add_argument('--trial', type=str, default='1', help='trial id')
 
-    parser.add_argument('-r', '--gamma', type=float, default=0.1, help='weight for classification')
-    parser.add_argument('-a', '--alpha', type=float, default=0.9, help='weight balance for KD')
-    parser.add_argument('-b', '--beta', type=float, default=0.0, help='weight balance for other losses')
+    parser.add_argument('-r', '--gamma', type=float, default=0.1, help='weight for classification')         # Paper Alpha
+    parser.add_argument('-a', '--alpha', type=float, default=0.9, help='weight balance for KD')             # Paper Beta
+    parser.add_argument('-b', '--beta', type=float, default=0.0, help='weight balance for other losses')    # Paper Gamma
 
     # KL distillation
-    parser.add_argument('--kd_T', type=float, default=4, help='default temperature for KD distillation')
+    parser.add_argument('--kd_T', type=float, default=4.0, help='default temperature for KD distillation')
 
     # CTKD distillation
     parser.add_argument('--have_mlp', type=int, default=0)
@@ -119,7 +120,20 @@ def parse_option():
     
     parser.add_argument('--deterministic', action='store_true', help='Make results reproducible')
 
+    parser.add_argument('--state_dict_save_transform', action='store_true', help='Loads model and saves its state_dict separately')
+    parser.add_argument('--path_orig', type=str, default=None, help='Saved model snapshot')
+    parser.add_argument('--state_dict_path', type=str, default='./save/state_dicts/model_state_dict.pth')
+
     opt = parser.parse_args()
+
+    # Do the model save type transformation and exit
+    if opt.state_dict_save_transform and opt.path_orig is not None:
+        if not os.path.isdir(os.path.dirname(opt.state_dict_path)):
+            os.makedirs(os.path.dirname(opt.state_dict_path))
+        torch.save(torch.load(opt.path_orig)['model'], opt.state_dict_path)
+        print('Model state_dict saved. Exiting...')
+        exit()
+
 
     # set different learning rate from these 4 models
     if opt.model_s in ['MobileNetV2', 'ShuffleV1', 'ShuffleV2']:
@@ -284,6 +298,13 @@ def main_worker(gpu, ngpus_per_node, opt):
     
     module_args = {'num_classes': n_cls}
     model_s = model_dict[opt.model_s](**module_args)
+    if opt.path_s is not None:
+        loaded = torch.load(opt.path_s, map_location="cpu")
+        if isinstance(loaded, nn.Module):
+            model_s = loaded
+        else:
+            model_s.load_state_dict(loaded)
+    print(model_s)
     
     if opt.dataset == 'cifar100':
         data = torch.randn(2, 3, 32, 32)
@@ -440,7 +461,7 @@ def main_worker(gpu, ngpus_per_node, opt):
                 'model': model_s.state_dict(),
                 'best_acc': best_acc,
             }
-            save_file = os.path.join(opt.save_folder, '{}_best.pth'.format(opt.model_s))
+            save_file = os.path.join(opt.save_folder, '{}_best'.format(opt.model_s))
             
             test_merics = {
                             'test_acc': test_acc,
@@ -456,7 +477,8 @@ def main_worker(gpu, ngpus_per_node, opt):
                 if best_model:
                     best_model=False
                     if opt.save_model:
-                        torch.save(state, save_file)
+                        torch.save(state, save_file+'_state.ckpt')
+                        torch.save(model_s, save_file+'_model.pth')
 
 
 if __name__ == '__main__':

@@ -5,7 +5,7 @@ from __future__ import print_function
 
 import os
 
-import imgaug.augmenters as iaa
+# import imgaug.augmenters as iaa
 import numpy as np
 from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
