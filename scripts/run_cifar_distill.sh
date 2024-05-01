@@ -2,26 +2,67 @@
 model_path=/home/koppany/TUDelft/thesis/git/Torch-Pruning/benchmarks/run/ctkd_models/resnet20
 
 # KD
-python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
-        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
-        --path-s $model_path/su_3.0/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
-        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
-        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_3.0/run_4'
-python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
-        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
-        --path-s $model_path/su_2.0/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
-        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
-        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_2.0/run_2'
-python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
-        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
-        --path-s $model_path/su_1.5/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
-        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
-        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_1.5/run_2'
-python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
-        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
-        --path-s $model_path/su_1.11/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
-        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
-        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_1.1/run_2'
+python3 train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 1.5 \
+        --have_mlp 0 --mlp_name 'global' --sparsity_learning \
+        --cosine_decay 1 --decay_max 1 --decay_min -1 --decay_loops 10 \
+        --epochs 240 --lr_decay_epochs '150,180,210,250,300,350,400,450' \
+        --save_model --experiments_dir 'tea-res56-stu-res20/KD/sparse_learning/kd_T_1.5' --experiments_name 'epochs-240'
+
+python3 train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 2 \
+        --have_mlp 0 --mlp_name 'global' --sparsity_learning \
+        --cosine_decay 1 --decay_max 1 --decay_min -1 --decay_loops 10 \
+        --epochs 240 --lr_decay_epochs '150,180,210,250,300,350,400,450' \
+        --save_model --experiments_dir 'tea-res56-stu-res20/KD/sparse_learning/kd_T_2' --experiments_name 'epochs-240'
+
+python3 train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 8 \
+        --have_mlp 0 --mlp_name 'global' --sparsity_learning \
+        --cosine_decay 1 --decay_max 1 --decay_min -1 --decay_loops 10 \
+        --epochs 240 --lr_decay_epochs '150,180,210,250,300,350,400,450' \
+        --save_model --experiments_dir 'tea-res56-stu-res20/KD/sparse_learning/kd_T_8' --experiments_name 'epochs-240'
+
+python3 train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 16 \
+        --have_mlp 0 --mlp_name 'global' --sparsity_learning \
+        --cosine_decay 1 --decay_max 1 --decay_min -1 --decay_loops 10 \
+        --epochs 240 --lr_decay_epochs '150,180,210,250,300,350,400,450' \
+        --save_model --experiments_dir 'tea-res56-stu-res20/KD/sparse_learning/kd_T_16' --experiments_name 'epochs-240'
+
+
+# Prune using Torch_Pruning inbetween
+#model_path=/home/koppany/TUDelft/thesis/git/Torch-Pruning/benchmarks/run/ctkd_models/resnet20/sparse_pretrained/no-finetuning
+#python3 train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+#        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
+#        --path-s $model_path/epoch_500/su_1.5/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
+#        --have_mlp 0 --mlp_name 'global' \
+#        --cosine_decay 1 --decay_max 1 --decay_min -1 --decay_loops 10 \
+#        --epochs 240 --lr_decay_epochs '50,80,110,150,200' --learning_rate 0.001\
+#        --save_model --experiments_dir 'tea-res56-stu-res20/KD/sparse_learning/epochs-500/pruned/su_1.5/finetuning' --experiments_name 'epochs-240'
+
+
+# Pruning -> KD
+#python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+#        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
+#        --path-s $model_path/su_3.0/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
+#        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
+#        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_3.0/run_4'
+#python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+#        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
+#        --path-s $model_path/su_2.0/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
+#        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
+#        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_2.0/run_2'
+#python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+#        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
+#        --path-s $model_path/su_1.5/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
+#        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
+#        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_1.5/run_2'
+#python train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \
+#        --model_s resnet20 -r 0.1 -a 0.9 -b 0 --kd_T 4 \
+#        --path-s $model_path/su_1.11/cifar100/prune/cifar100-global-group_sl-resnet20/cifar100_resnet20_group_sl.pth \
+#        --learning_rate 0.001 --epochs 300 --lr_decay_epochs '150,180,210, 240, 270' \
+#        --save_model --experiments_dir 'tea-res56-stu-res20/pruning+KD' --experiments_name 'torch_pruning/su_1.1/run_2'
 
 ## KD+CTKD
 #python3 train_student.py --path-t ./save/models/resnet56_vanilla/ckpt_epoch_240.pth --distill kd \

@@ -25,6 +25,40 @@ def adjust_learning_rate(epoch, opt, optimizer):
             param_group['lr'] = new_lr
 
 
+class EarlyStopping:
+    def __init__(self, patience=1, min_delta=0.0, cumulative_delta=True, min_mode=False):
+        """
+        EarlyStopping Function class initializer
+
+        @param patience: Number of calls to wait if no improvement and then indicate stopping condition.
+        @param min_delta: A minimum change in score to potentially qualify as an improvement
+        @param cumulative_delta: If True, min_delta defines an increase since the last patience reset, otherwise,
+                                it defines an increase after the last call.
+        @param min_mode: If True, the lower the score the better, otherwise the higher the score the better.
+        """
+        self.patience = patience
+        self.min_delta = min_delta
+        self.cumulative_delta = cumulative_delta
+        self.min_mode = min_mode
+        self.score = -np.inf
+
+        self.counter = 0
+
+    def __call__(self, score):
+        current_score = -score if self.min_mode else score
+        if (current_score + self.min_delta) > self.score:   # Improvement detected -> Patience reset
+            self.counter = 0
+            self.score = current_score
+            return False
+        # No improvement
+        self.counter += 1
+        if not self.cumulative_delta:
+            self.score = current_score
+        if self.counter >= self.patience:
+            return True
+        return False
+
+
 class AverageMeter(object):
     """Computes and stores the average and current value"""
     def __init__(self):

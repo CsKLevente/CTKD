@@ -12,6 +12,7 @@ import torch.nn as nn
 import torch.optim as optim
 from dataset.cifar100 import get_cifar100_dataloaders
 from dataset.imagenet import get_imagenet_dataloader, imagenet_list
+from dataset.deeplake_data import get_tiny_imagenet_data_loader
 from helper.loops import train_vanilla as train
 from helper.loops import validate
 from helper.util import (AverageMeter, accuracy, adjust_learning_rate,
@@ -48,7 +49,8 @@ def parse_option():
                                  'resnet8x4', 'resnet32x4', 'wrn_16_1', 'wrn_16_2', 'wrn_40_1', 'wrn_40_2',
                                  'vgg8', 'vgg11', 'vgg13', 'vgg16', 'vgg19',
                                  'MobileNetV2', 'ShuffleV1', 'ShuffleV2','ResNet50' ])
-    parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100', 'imagenet', 'imagenette'], help='dataset')
+    parser.add_argument('--dataset', type=str, default='cifar100', choices=['cifar100', 'imagenet', 'imagenette', 'imagewoof', 'tiny_imagenet'], help='dataset')
+    parser.add_argument('--half_size_img', action='store_true')
 
     # multiprocessing
     parser.add_argument('--multiprocessing-distributed', action='store_true',
@@ -58,6 +60,7 @@ def parse_option():
                          'multi node data parallel training')
     parser.add_argument('--dist-url', default='tcp://127.0.0.1:23451', type=str,
                     help='url used to set up distributed training')
+
     
     opt = parser.parse_args()
 
@@ -124,10 +127,20 @@ def main_worker(gpu, ngpus_per_node, opt):
         'cifar100': 100,
         'imagenet': 1000,
         'imagenette': 10,
+        'imagewoof': 10,
+        'tiny_imagenet': 200,
     }.get(opt.dataset, None)
     
     model = model_dict[opt.model](num_classes=n_cls)
 
+    if opt.dataset == 'tiny_imagenet':
+        model.fc = nn.Linear(model.fc.in_features*4, n_cls)  # 32x32 -> 64x64 input size
+    # if opt.half_size_img:
+    #     model.fc = nn.Linear(int(model.fc.in_features / 4), n_cls)
+    # if opt.dataset == 'imagewoof':
+    #     model.fc = nn.Linear(model.fc.in_features * 49, n_cls)  # 32x32 -> 224x224 input size
+    # print(model.fc)
+    # print(model)
     # optimizer
     optimizer = optim.SGD(model.parameters(),
                           lr=opt.learning_rate,
@@ -167,12 +180,17 @@ def main_worker(gpu, ngpus_per_node, opt):
         train_loader, val_loader = get_cifar100_dataloaders(batch_size=opt.batch_size, num_workers=opt.num_workers)
     elif opt.dataset in imagenet_list:
         train_loader, val_loader, train_sampler = get_imagenet_dataloader(
-                    dataset = opt.dataset,
+                    dataset=opt.dataset,
                     batch_size=opt.batch_size, num_workers=opt.num_workers,
-                    multiprocessing_distributed=opt.multiprocessing_distributed)
+                    multiprocessing_distributed=opt.multiprocessing_distributed,
+                    half_size=opt.half_size_img)
+    elif opt.dataset == "tiny_imagenet":
+        train_loader, val_loader = get_tiny_imagenet_data_loader(batch_size=opt.batch_size, num_workers=opt.num_workers)
     else:
         raise NotImplementedError(opt.dataset)
 
+    # print(next(iter(train_loader))[0].shape)
+    # exit()
     best_acc = 0
     # routine
     for epoch in range(1, opt.epochs + 1):

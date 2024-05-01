@@ -135,7 +135,7 @@ class ResNet(nn.Module):
 
     def __init__(self, block, layers, num_classes=1000, zero_init_residual=False,
                  groups=1, width_per_group=64, replace_stride_with_dilation=None,
-                 norm_layer=None, multiplier=1):
+                 norm_layer=None, multiplier=[1, 1, 1, 1]):
         super(ResNet, self).__init__()
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
@@ -143,7 +143,7 @@ class ResNet(nn.Module):
 
         self.inplanes = 64
         self.dilation = 1
-        self.multiplier = 1
+        self.multiplier = multiplier
         if replace_stride_with_dilation is None:
             # each element in the tuple indicates if we should replace
             # the 2x2 stride with a dilated convolution instead
@@ -158,16 +158,16 @@ class ResNet(nn.Module):
         self.bn1 = norm_layer(self.inplanes)
         self.relu = nn.ReLU(inplace=True)
         self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
-        self.layer1 = self._make_layer(block, 64 * self.multiplier, layers[0])
-        self.layer2 = self._make_layer(block, 128 * self.multiplier, layers[1], stride=2,
+        self.layer1 = self._make_layer(block, 64 * self.multiplier[0], layers[0])
+        self.layer2 = self._make_layer(block, 128 * self.multiplier[1], layers[1], stride=2,
                                        dilate=replace_stride_with_dilation[0])
-        self.layer3 = self._make_layer(block, 256 * self.multiplier, layers[2], stride=2,
+        self.layer3 = self._make_layer(block, int(256 * self.multiplier[2]), layers[2], stride=2,
                                        dilate=replace_stride_with_dilation[1])
-        self.layer4 = self._make_layer(block, 512 * self.multiplier, layers[3], stride=2,
+        self.layer4 = self._make_layer(block, int(512 * self.multiplier[3]), layers[3], stride=2,
                                        dilate=replace_stride_with_dilation[2])
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
-        self.fc = nn.Linear(512 * block.expansion, num_classes)
+        self.fc = nn.Linear(int(512 * block.expansion*self.multiplier[3]), num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -275,6 +275,19 @@ def _resnet(arch, block, layers, pretrained, progress, **kwargs):
                                               progress=progress)
         model.load_state_dict(state_dict)
     return model
+
+
+def resnet10(pretrained=False, progress=True, **kwargs):
+    r"""ResNet-10 model matching
+    `"YugeTen/ResNet10-architecture.md" <https://gist.github.com/YugeTen/c2ffaaa2cfa0d9049335b4a8ee821b0d>`_
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    kwargs['multiplier'] = [1, 1, 0.75, 0.5]
+    return _resnet('resnet10', BasicBlock, [1, 1, 1, 1], pretrained, progress,
+                   **kwargs)
 
 
 def resnet18(pretrained=False, progress=True, **kwargs):

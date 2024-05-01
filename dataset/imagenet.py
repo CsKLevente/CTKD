@@ -11,14 +11,14 @@ from torch.utils.data import DataLoader
 from torch.utils.data.distributed import DistributedSampler
 from torchvision import datasets, transforms
 
-imagenet_list = ['imagenet', 'imagenette']
+imagenet_list = ['imagenet', 'imagenette', 'imagewoof']
 
 
 def get_data_folder(dataset='imagenet'):
     """
     return the path to store the data
     """
-    data_folder = 'your_imagenet_data_path'
+    data_folder = 'your_imagenet_data_path/'+dataset
 
     if not os.path.isdir(data_folder):
         os.makedirs(data_folder)
@@ -181,7 +181,7 @@ def get_test_loader(dataset='imagenet', batch_size=128, num_workers=8):
 
 
 def get_imagenet_dataloader(dataset='imagenet', batch_size=128, num_workers=16,
-                            multiprocessing_distributed=False):
+                            multiprocessing_distributed=False, half_size=False):
     """
     Data Loader for imagenet
     """
@@ -192,17 +192,23 @@ def get_imagenet_dataloader(dataset='imagenet', batch_size=128, num_workers=16,
 
     normalize = transforms.Normalize(mean=[0.485, 0.456, 0.406],
                                      std=[0.229, 0.224, 0.225])
-    
+
+    resize_size = 256
+    img_size = 224
+    if half_size:
+        img_size = 112
+        resize_size = 128
+
     train_transform = transforms.Compose([
-        transforms.RandomResizedCrop(224),
+        transforms.RandomResizedCrop(img_size),
         transforms.RandomHorizontalFlip(),
         transforms.ToTensor(),
         normalize,
     ])
 
     test_transform = transforms.Compose([
-        transforms.Resize(256),
-        transforms.CenterCrop(224),
+        transforms.Resize(resize_size),
+        transforms.CenterCrop(img_size),
         transforms.ToTensor(),
         normalize,
     ])

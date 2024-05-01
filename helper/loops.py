@@ -25,7 +25,6 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
 
     end = time.time()
     for idx, batch_data in enumerate(train_loader):
-        
         input, target = batch_data
         
         data_time.update(time.time() - end)
@@ -70,7 +69,7 @@ def train_vanilla(epoch, train_loader, model, criterion, optimizer, opt):
             
     return top1.avg, top5.avg, losses.avg
 
-def train_distill(epoch, train_loader, module_list, mlp_net, cos_value, criterion_list, optimizer, opt):
+def train_distill(epoch, train_loader, module_list, mlp_net, cos_value, criterion_list, optimizer, opt, pruner=None):
     """One epoch distillation"""
     # set modules as train()
     for module in module_list:
@@ -185,6 +184,8 @@ def train_distill(epoch, train_loader, module_list, mlp_net, cos_value, criterio
         # ===================backward=====================
         optimizer.zero_grad()
         loss.backward()
+        if pruner is not None:
+            pruner.regularize(model_s, alpha=pruner.alpha)  # for sparsity learning
         optimizer.step()        
 
         # print info
